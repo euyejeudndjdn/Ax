@@ -1,0 +1,69 @@
+const express = require('express');
+const app = express();
+const fs = require('fs');
+const path = require('path');
+
+app.use(express.json());
+app.use(express.static(__dirname));
+
+const DATA_FILE = path.join(__dirname, 'servers.json');
+const VALID_KEYS = ["AX-VIP-2026"];
+
+function getServers() {
+    try {
+        if (fs.existsSync(DATA_FILE)) {
+            return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        }
+    } catch (e) {}
+    return [];
+}
+
+function saveServers(servers) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(servers, null, 2));
+}
+
+// استقبال السيرفرات من سكربت اللعبة
+app.post('/api/add', (req, res) => {
+    try {
+        const { key, weapon, count, ping, players, jobId } = req.body;
+        if (!key || !VALID_KEYS.includes(key)) {
+            return res.status(403).json({ status: 'error', error: 'Invalid Key!' });
+        }
+        if (!jobId) return res.status(400).json({ status: 'error', error: 'Missing jobId' });
+        
+        let tier = "Legendary";
+        let lowerW = (weapon || "").toLowerCase();
+        if (lowerW.includes("godly") || lowerW.includes("gold") || lowerW.includes("rpg") || lowerW.includes("m4")) {
+            tier = "Omega";
+        }
+        
+        let servers = getServers();
+        servers = servers.filter(s => s.jobId !== jobId);
+        
+        servers.unshift({ 
+            tier,
+            weapon: weapon || "RPG", 
+            count: count || "1", 
+            ping: ping || "40ms",
+            players: players || "0/28", 
+            jobId, 
+            time: new Date() 
+        });
+        
+        if (servers.length > 50) servers.pop();
+        saveServers(servers);
+        
+        console.log(`🔥 [AX HUB Cloud] Added Tier: ${tier} | Weapon: ${weapon}`);
+        res.json({ status: 'success' });
+    } catch (e) {
+        res.status(500).json({ status: 'error', error: e.message });
+    }
+});
+
+// إرسال السيرفرات للموقع
+app.get('/api/web-servers', (req, res) => {
+    res.json(getServers());
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 AX HUB Cloud Server running on port ${PORT}`));

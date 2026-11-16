@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AX HUB | Block Spin Servers</title>
+    <style>
+        body { background-color: #0f0f16; color: #fff; font-family: Tahoma, sans-serif; text-align: center; padding: 20px; }
+        .login-box, .hub-box { max-width: 500px; margin: 30px auto; background: #191926; padding: 20px; border-radius: 12px; box-shadow: 0 0 15px rgba(0,255,255,0.2); }
+        input, button { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; font-size: 16px; }
+        input { background: #252538; color: #fff; text-align: center; }
+        button { background: #00aa7f; color: #fff; font-weight: bold; cursor: pointer; }
+        .server-card { background: #22223b; padding: 15px; margin: 10px 0; border-radius: 8px; text-align: left; direction: ltr; border-left: 5px solid #00ffaa; }
+        .hidden { display: none; }
+        .omega { border-left-color: #ffaa00; }
+    </style>
+</head>
+<body>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginSection" class="login-box">
+        <h2>⚡ AX HUB LOGIN ⚡</h2>
+        <p>أدخل الكود السري للدخول</p>
+        <input type="password" id="passCode" placeholder="أدخل الكود هنا...">
+        <button onclick="checkCode()">دخول 🚀</button>
+        <p id="errorMsg" style="color: #ff4444;"></p>
+    </div>
+
+    <!-- لوحة السيرفرات واللوت (شبيهة بمورتي هاب) -->
+    <div id="hubSection" class="hub-box hidden">
+        <h2>🔥 AX HUB | OMEGA & LEGENDARY 🔥</h2>
+        <p>أقوى سيرفرات بلوكسبين المكتشفة</p>
+        <div id="serversList">جاري جلب السيرفرات...</div>
+        <button onclick="loadServers()" style="background: #007aff;">تحديث القائمة 🔄</button>
+    </div>
+
+    <script>
+        const MY_SECRET_KEY = "youssef2026";
+
+        function checkCode() {
+            let entered = document.getElementById("passCode").value;
+            if (entered === MY_SECRET_KEY) {
+                document.getElementById("loginSection").style.display = "none";
+                document.getElementById("hubSection").classList.remove("hidden");
+                loadServers();
+            } else {
+                document.getElementById("errorMsg").innerText = "❌ الكود خطأ! حاول مجدداً.";
+            }
+        }
+
+        function loadServers() {
+            fetch('/api/web-servers')
+            .then(res => res.json())
+            .then(data => {
+                let list = document.getElementById("serversList");
+                list.innerHTML = "";
+                if (!data || data.length === 0) {
+                    list.innerHTML = "<p>لا توجد سيرفرات مسجلة حالياً...</p>";
+                    return;
+                }
+                data.forEach(srv => {
+                    let card = document.createElement("div");
+                    card.className = "server-card " + (srv.tier === "Omega" ? "omega" : "");
+                    card.innerHTML = `
+                        <b>Tier:</b> ${srv.tier} <br>
+                        <b>Loot/Weapon:</b> ${srv.weapon} (${srv.count}) <br>
+                        <b>Ping:</b> ${srv.ping} | <b>Players:</b> ${srv.players} <br>
+                        <a href="roblox://experiences/start?placeId=0&gameInstanceId=${srv.jobId}" style="color: #00ffaa; text-decoration: none; font-weight: bold;">[ انضمام مباشر للسيرفر 🚀 ]</a>
+                    `;
+                    list.appendChild(card);
+                });
+            }).catch(err => {
+                document.getElementById("serversList").innerHTML = "<p>خطأ في الاتصال...</p>";
+            });
+        }
+    </script>
+</body>
+</html>
